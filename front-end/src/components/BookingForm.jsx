@@ -1,74 +1,12 @@
-// import React, { useEffect, useState } from "react";
-
-// const BookingForm = () => {
-//   const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
-//   const [form, setForm] = useState({ name: "", email: "", date: "", time: "" });
-//   const [loading, setLoading] = useState(false);
-//   const [message, setMessage] = useState("");
-
-//   useEffect(() => {
-//     if (!message) return undefined;
-//     const timer = setTimeout(() => setMessage(""), 3000);
-//     return () => clearTimeout(timer);
-//   }, [message]);
-
-//   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     setLoading(true);
-//     setMessage("");
-
-//     try {
-//       const res = await fetch(`${API_BASE}/api/bookings/`, {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify(form),
-//       });
-
-//       if (!res.ok) throw new Error();
-//       setMessage("✅ Appointment booked successfully");
-//       setForm({ name: "", email: "", date: "", time: "" });
-//     } catch {
-//       setMessage("❌ Failed to book appointment");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   return (
-//     <section className="booking">
-//       <form className="card" onSubmit={handleSubmit}>
-//         <h2>Book an Appointment</h2>
-
-//         <input name="name" placeholder="Full Name" value={form.name} onChange={handleChange} required />
-//         <input type="email" name="email" placeholder="Email" value={form.email} onChange={handleChange} required />
-//         <input type="date" name="date" value={form.date} onChange={handleChange} required />
-//         <select name="time" value={form.time} onChange={handleChange} required>
-//           <option value="">Select time</option>
-//           <option>09:00</option>
-//           <option>10:00</option>
-//           <option>11:00</option>
-//           <option>14:00</option>
-//           <option>15:00</option>
-//         </select>
-
-//         <button type="submit" disabled={loading}>{loading ? "Booking..." : "Book Now"}</button>
-//         {message && <p>{message}</p>}
-//       </form>
-//     </section>
-//   );
-// };
-
-// export default BookingForm;
-
-
 import { useState } from "react";
 import "./Booking.css";
 
 const Booking = () => {
   const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
-  const [status, setStatus] = useState("idle");
+
+  const [status, setStatus] = useState("idle"); // idle | loading | success | error
+  const [errorMsg, setErrorMsg] = useState("");
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -84,6 +22,7 @@ const Booking = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus("loading");
+    setErrorMsg("");
 
     try {
       const res = await fetch(`${API_BASE}/api/bookings/`, {
@@ -94,17 +33,43 @@ const Booking = () => {
         body: JSON.stringify(formData),
       });
 
-      if (res.ok) setStatus("success");
-      else setStatus("error");
+      if (res.ok) {
+        setStatus("success");
+        return;
+      }
+
+      // --- failure path ---
+      let message = "Booking failed. Please check your details and try again.";
+
+      try {
+        const data = await res.json();
+        if (data?.errors) {
+          const errorsArray = Object.values(data.errors).flat();
+          if (errorsArray.length > 0) {
+            message = errorsArray.join(" ");
+          }
+        }
+      } catch {
+        // backend didn't return JSON → keep fallback message
+      }
+
+      setErrorMsg(message);
+      setStatus("error");
     } catch {
+      setErrorMsg("Network error. Please try again later.");
       setStatus("error");
     }
   };
+
 
   return (
     <section className="booking">
       <div className="booking-container">
         <h2>Book a Session</h2>
+
+        {status === "error" && (
+          <p className="error-msg">{errorMsg}</p>
+        )}
 
         {status === "success" && (
           <p className="success-msg">
@@ -130,6 +95,7 @@ const Booking = () => {
               onChange={handleChange}
               required
             />
+
             <input
               type="date"
               name="date"
@@ -137,6 +103,7 @@ const Booking = () => {
               onChange={handleChange}
               required
             />
+
             <select
               name="time"
               value={formData.time}
