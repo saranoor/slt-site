@@ -1,5 +1,5 @@
 .booking {
-  background: #ffffff;
+  background: #F8FAFC;
   padding: 80px 20px;
 }
 
@@ -12,7 +12,7 @@
 .booking h2 {
   font-size: 28px;
   margin-bottom: 12px;
-  color: #1f2937;
+  color: #0F2A44;
 }
 
 .booking-text {
@@ -39,6 +39,9 @@
 
 .booking-form button {
   margin-top: 8px;
+  border: 1px #b91c1c;
+  background: #8B8CF6;
+  color: white;
 }
 
 .success-msg {
